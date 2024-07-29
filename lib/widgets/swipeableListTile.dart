@@ -28,7 +28,7 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
       vsync: this,
     );
     _animation = Tween<double>(begin: 0.0, end: 0.0).animate(_controller);
@@ -53,6 +53,7 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
   void _onSwipeButtonPressed() {
     setState(() {
       _isAdditionalButtonsVisible = !_isAdditionalButtonsVisible;
+      // _animateToEnd(0.0);
     });
   }
 
@@ -60,19 +61,27 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
   Widget build(BuildContext context) {
     return GestureDetector(
       onHorizontalDragUpdate: (details) {
-        if (direction != Direction.neitherDirection) {
-          setState(() {
+        setState(() {
+          if (direction != Direction.neitherDirection) {
             _swipeOffset += details.delta.dx;
-          });
-        }
+
+            if (direction == Direction.toLeftForwardDirection &&
+                _swipeOffset > 0) {
+              _swipeOffset = 0;
+            } else if (direction == Direction.toRightForwardDirection &&
+                _swipeOffset < 0) {
+              _swipeOffset = 0;
+            }
+          }
+        });
       },
       onHorizontalDragStart: (details) {
         final pos = details.localPosition.dx;
         final width = context.size!.width;
 
-        if ((pos > width * 5 / 6) && _swipeOffset == 0) {
+        if (pos > width * 5 / 6 && _swipeOffset == 0) {
           direction = Direction.toLeftForwardDirection;
-        } else if ((pos < width / 6) && _swipeOffset == 0) {
+        } else if (pos < width / 6 && _swipeOffset == 0) {
           direction = Direction.toRightForwardDirection;
         } else if (_swipeOffset < 0) {
           direction = Direction.toRightBackwardDirection;
@@ -87,8 +96,6 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
         if (direction == Direction.toLeftForwardDirection) {
           if (_swipeOffset < 0) {
             _animateToEnd(-300.0);
-          } else {
-            _animateToEnd(300.0);
           }
         } else if (direction == Direction.toLeftBackwardDirection) {
           if (pos > width * 5 / 6 && pos < width * 5.9 / 6) {
@@ -99,8 +106,6 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
         } else if (direction == Direction.toRightForwardDirection) {
           if (_swipeOffset > 0) {
             _animateToEnd(300.0);
-          } else {
-            _animateToEnd(-300.0);
           }
         } else if (direction == Direction.toRightBackwardDirection) {
           if (pos < width * 1 / 6 && pos > width * 0.1 / 6) {
@@ -111,6 +116,12 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
         }
         direction = Direction.neitherDirection;
       },
+      onTap: () {
+        if (_swipeOffset != 0) {
+          _animateToEnd(0.0);
+        }
+      },
+
       child: Stack(
         children: [
           if (_swipeOffset != 0)
