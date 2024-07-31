@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../touch.dart';
+import 'swipe_buttons.dart';
 
 enum Direction {
   toRightForwardDirection,
@@ -11,7 +13,7 @@ enum Direction {
 class SwipeableListTile extends StatefulWidget {
   final Map<String, dynamic> verse;
 
-  SwipeableListTile({required this.verse});
+  const SwipeableListTile({required this.verse, Key? key}) : super(key: key);
 
   @override
   _SwipeableListTileState createState() => _SwipeableListTileState();
@@ -23,12 +25,13 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
   late AnimationController _controller;
   late Animation<double> _animation;
   bool _isAdditionalButtonsVisible = false;
+  final GlobalKey _tileKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
     _animation = Tween<double>(begin: 0.0, end: 0.0).animate(_controller);
@@ -37,8 +40,12 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
   void _animateToEnd(double endValue) {
     _animation = Tween<double>(begin: _swipeOffset, end: endValue).animate(_controller)
       ..addListener(() {
-        setState(() {
-          _swipeOffset = _animation.value;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _swipeOffset = _animation.value;
+            });
+          }
         });
       });
     _controller.forward(from: 0.0);
@@ -57,223 +64,136 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragUpdate: (details) {
-        setState(() {
-          if (direction != Direction.neitherDirection) {
-            _swipeOffset += details.delta.dx;
+  Offset _getElementPosition() {
+    final RenderBox renderBox = _tileKey.currentContext!.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
 
-            if (direction == Direction.toLeftForwardDirection &&
-                _swipeOffset > 0) {
-              _swipeOffset = 0;
-            } else if (direction == Direction.toRightForwardDirection &&
-                _swipeOffset < 0) {
-              _swipeOffset = 0;
-            }
-          }
-        });
-      },
-      onHorizontalDragStart: (details) {
-        final pos = details.localPosition.dx;
-        final width = context.size!.width;
-
-        if (pos > width * 5 / 6 && _swipeOffset == 0) {
-          direction = Direction.toLeftForwardDirection;
-        } else if (pos < width / 6 && _swipeOffset == 0) {
-          direction = Direction.toRightForwardDirection;
-        } else if (_swipeOffset < 0) {
-          direction = Direction.toRightBackwardDirection;
-        } else if (_swipeOffset > 0) {
-          direction = Direction.toLeftBackwardDirection;
-        }
-      },
-      onHorizontalDragEnd: (details) {
-        final pos = details.localPosition.dx;
-        final width = context.size!.width;
-
-        if (direction == Direction.toLeftForwardDirection) {
-          if (_swipeOffset < 0) {
-            _animateToEnd(-300.0);
-          }
-        } else if (direction == Direction.toLeftBackwardDirection) {
-          if (pos > width * 5 / 6 && pos < width * 5.9 / 6) {
-            _animateToEnd(300.0);
-          } else {
-            _animateToEnd(0.0);
-          }
-        } else if (direction == Direction.toRightForwardDirection) {
-          if (_swipeOffset > 0) {
-            _animateToEnd(300.0);
-          }
-        } else if (direction == Direction.toRightBackwardDirection) {
-          if (pos < width * 1 / 6 && pos > width * 0.1 / 6) {
-            _animateToEnd(-300.0);
-          } else {
-            _animateToEnd(0.0);
-          }
-        }
-        direction = Direction.neitherDirection;
-      },
-      onTap: () {
-        if (_swipeOffset != 0) {
-          _animateToEnd(0.0);
-        }
-      },
-
-      child: Stack(
-        children: [
-          if (_swipeOffset != 0)
-            Positioned.fill(
-              child: Row(
-                mainAxisAlignment: _swipeOffset > 0 ? MainAxisAlignment.start : MainAxisAlignment.end,
-                children: [
-                  if (_swipeOffset > 0)
-                    ...(_isAdditionalButtonsVisible
-                        ? buildAdditionalSwipeActionLeft()
-                        : buildSwipeActionLeft()),
-                  if (_swipeOffset < 0)
-                    ...(_isAdditionalButtonsVisible
-                        ? buildAdditionalSwipeActionRight()
-                        : buildSwipeActionRight()),
-                ],
-              ),
-            ),
-          Transform.translate(
-            offset: Offset(_swipeOffset, 0),
-            child: Container(
-              decoration: const BoxDecoration(color: Colors.black),
-              child: ListTile(
-                title: Text('${widget.verse['verse']}. ${widget.verse['text']}'),
-                textColor: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return position;
   }
 
-  List<Widget> buildSwipeActionLeft() => [
-    SwipeButton(
-      icon: Icons.archive,
-      color: Colors.blue,
-      scale: _swipeOffset / 300,
-      visible: _swipeOffset >= 0,
-      onPressed: _onSwipeButtonPressed,
-    ),
-    SwipeButton(
-      icon: Icons.share,
-      color: Colors.green,
-      scale: _swipeOffset / 300,
-      visible: _swipeOffset >= 0,
-    ),
-    SwipeButton(
-      icon: Icons.label,
-      color: Colors.yellow,
-      scale: _swipeOffset / 300,
-      visible: _swipeOffset >= 0,
-    ),
-  ];
-
-  List<Widget> buildAdditionalSwipeActionLeft() => [
-    SwipeButton(
-      icon: Icons.folder,
-      color: Colors.teal,
-      scale: _swipeOffset / 300,
-      visible: _swipeOffset >= 0,
-    ),
-    SwipeButton(
-      icon: Icons.download,
-      color: Colors.indigo,
-      scale: _swipeOffset / 300,
-      visible: _swipeOffset >= 0,
-    ),
-    SwipeButton(
-      icon: Icons.copy,
-      color: Colors.pink,
-      scale: _swipeOffset / 300,
-      visible: _swipeOffset >= 0,
-    ),
-  ];
-
-  List<Widget> buildSwipeActionRight() => [
-    SwipeButton(
-      icon: Icons.delete,
-      color: Colors.red,
-      scale: -_swipeOffset / 300,
-      visible: _swipeOffset <= 0,
-      onPressed: _onSwipeButtonPressed,
-    ),
-    SwipeButton(
-      icon: Icons.edit,
-      color: Colors.orange,
-      scale: -_swipeOffset / 300,
-      visible: _swipeOffset <= 0,
-    ),
-    SwipeButton(
-      icon: Icons.sunny,
-      color: Colors.purple,
-      scale: -_swipeOffset / 300,
-      visible: _swipeOffset <= 0,
-    ),
-  ];
-
-  List<Widget> buildAdditionalSwipeActionRight() => [
-    SwipeButton(
-      icon: Icons.save,
-      color: Colors.brown,
-      scale: -_swipeOffset / 300,
-      visible: _swipeOffset <= 0,
-    ),
-    SwipeButton(
-      icon: Icons.email,
-      color: Colors.cyan,
-      scale: -_swipeOffset / 300,
-      visible: _swipeOffset <= 0,
-    ),
-    SwipeButton(
-      icon: Icons.print,
-      color: Colors.lime,
-      scale: -_swipeOffset / 300,
-      visible: _swipeOffset <= 0,
-    ),
-  ];
-}
-
-class SwipeButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final double scale;
-  final bool visible;
-  final VoidCallback? onPressed;
-
-  SwipeButton({
-    required this.icon,
-    required this.color,
-    required this.scale,
-    required this.visible,
-    this.onPressed,
-  });
+  Size _getElementSize() {
+    final RenderBox renderBox = _tileKey.currentContext!.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    return size;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: visible && onPressed != null ? onPressed : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 0),
-        width: visible ? 100 * scale.clamp(0.0, 2) : 0,
-        decoration: BoxDecoration(
-          color: color,
+    final notifier = TouchNotifier.of(context);
+
+    return LayoutBuilder(builder: (context, constraints) {
+      if (notifier?.touchEvent != null && _swipeOffset != 0) {
+        final touchEvent = notifier!.touchEvent!;
+        final touchPosition = touchEvent.localPosition;
+        final listTilePosition = _getElementPosition();
+        final listTileSize = _getElementSize();
+
+        if (!(touchPosition.dy <= listTileSize.height + listTilePosition.dy &&
+            touchPosition.dy >= listTilePosition.dy)) {
+          _animateToEnd(0.0);
+        }
+      }
+
+      return GestureDetector(
+        onHorizontalDragUpdate: (details) {
+          setState(() {
+            if (direction != Direction.neitherDirection) {
+              if (_swipeOffset.abs() < 350.0) {
+                _swipeOffset += details.delta.dx;
+                if ((direction == Direction.toLeftForwardDirection ||
+                    direction == Direction.toRightBackwardDirection) &&
+                    _swipeOffset > 0) {
+                  _swipeOffset = 0;
+                } else if ((direction == Direction.toRightForwardDirection ||
+                    direction == Direction.toLeftBackwardDirection) &&
+                    _swipeOffset < 0) {
+                  _swipeOffset = 0;
+                }
+              }
+            }
+          });
+        },
+        onHorizontalDragStart: (details) {
+          final pos = details.localPosition.dx;
+          final width = context.size!.width;
+
+          if (pos > width * 5 / 6 && _swipeOffset == 0) {
+            direction = Direction.toLeftForwardDirection;
+          } else if (pos < width / 6 && _swipeOffset == 0) {
+            direction = Direction.toRightForwardDirection;
+          } else if (_swipeOffset < 0) {
+            direction = Direction.toRightBackwardDirection;
+          } else if (_swipeOffset > 0) {
+            direction = Direction.toLeftBackwardDirection;
+          }
+        },
+        onHorizontalDragEnd: (details) {
+          final velocity = details.velocity.pixelsPerSecond.dx;
+          if (direction == Direction.toLeftForwardDirection) {
+            if (velocity <= 0) {
+              _animateToEnd(-300.0);
+            } else {
+              _animateToEnd(0.0);
+            }
+          } else if (direction == Direction.toLeftBackwardDirection) {
+            if (velocity >= 0) {
+              _animateToEnd(300.0);
+            } else {
+              _animateToEnd(0.0);
+            }
+          } else if (direction == Direction.toRightForwardDirection) {
+            if (velocity >= 0) {
+              _animateToEnd(300.0);
+            }
+            else {
+              _animateToEnd(0.0);
+            }
+          } else if (direction == Direction.toRightBackwardDirection) {
+            if (velocity <= 0) {
+              _animateToEnd(-300.0);
+            } else {
+              _animateToEnd(0.0);
+            }
+          }
+          direction = Direction.neitherDirection;
+        },
+        onTap: () {
+          if (_swipeOffset != 0) {
+            _animateToEnd(0.0);
+          }
+        },
+        child: Stack(
+          children: [
+            if (_swipeOffset != 0)
+              Positioned.fill(
+                child: Row(
+                  mainAxisAlignment: _swipeOffset > 0 ? MainAxisAlignment.start : MainAxisAlignment.end,
+                  children: [
+                    if (_swipeOffset > 0)
+                      ...(_isAdditionalButtonsVisible
+                          ? buildAdditionalSwipeActionLeft(_swipeOffset)
+                          : buildSwipeActionLeft(_swipeOffset, _onSwipeButtonPressed)),
+                    if (_swipeOffset < 0)
+                      ...(_isAdditionalButtonsVisible
+                          ? buildAdditionalSwipeActionRight(_swipeOffset)
+                          : buildSwipeActionRight(_swipeOffset, _onSwipeButtonPressed)),
+                  ],
+                ),
+              ),
+            Transform.translate(
+              offset: Offset(_swipeOffset, 0),
+              child: Container(
+                key: _tileKey,
+                decoration: const BoxDecoration(color: Colors.black),
+                child: ListTile(
+                  title: Text('${widget.verse['verse']}. ${widget.verse['text']}'),
+                  textColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ),
-        child: Center(
-          child: Opacity(
-            opacity: visible ? 1.0 : 0.0,
-            child: Icon(icon, color: Colors.white),
-          ),
-        ),
-      ),
-    );
+      );
+    });
   }
 }

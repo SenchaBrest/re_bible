@@ -55,6 +55,19 @@ class BibleDatabase {
     return result;
   }
 
+  Future<List<Map<String, dynamic>>> getBookByNumber(int bookNumber) async {
+    final db = await instance.database;
+
+    final result = await db.query(
+      'books',
+      columns: ['short_name', 'long_name'],
+      where: 'book_number = ?',
+      whereArgs: [bookNumber],
+      distinct: true,
+    );
+    return result;
+  }
+
   Future<List<Map<String, dynamic>>> getChapters(int bookNumber) async {
     final db = await instance.database;
 
@@ -92,7 +105,6 @@ class BibleDatabase {
 
   Future close() async {
     final db = await instance.database;
-
     db.close();
   }
 }
