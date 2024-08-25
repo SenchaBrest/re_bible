@@ -4,6 +4,7 @@ import 'db_helper.dart';
 import 'widgets/swipeableListTile.dart';
 import 'verse_selection.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'active.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,13 +30,15 @@ class BibleApp extends StatefulWidget {
 
 class _BibleAppState extends State<BibleApp> {
   List<Map<String, dynamic>>? verses;
+  List<Map<String, dynamic>>? displayList; // Новый массив для отображения
   late Map<String, dynamic> book;
-  int currentBookNumber = 10; // Default to the first book (Genesis)
-  int startingVerseIndex = 0; // Default to the beginning of the chapter
+  int currentBookNumber = 10;
+  int startingVerseIndex = 0;
   final ItemScrollController _scrollController = ItemScrollController();
   final ItemPositionsListener _positionsListener = ItemPositionsListener.create();
-  String _currentVerseLabel = 'Выберите стих'; // Label for the current verse
+  String _currentVerseLabel = 'Выберите стих';
   PointerDownEvent? _touchEvent;
+  bool _isScrollLocked = false;
 
   @override
   void initState() {
@@ -47,9 +50,11 @@ class _BibleAppState extends State<BibleApp> {
       if (visibleItems.isNotEmpty) {
         final firstVisibleItem = visibleItems.first;
         final firstVisibleIndex = firstVisibleItem.index;
-        if (verses != null && firstVisibleIndex < verses!.length) {
-          final verse = verses![firstVisibleIndex];
-          _updateCurrentVerseLabel(verse['chapter'], verse['verse']);
+        if (displayList != null && firstVisibleIndex < displayList!.length) {
+          final verse = displayList![firstVisibleIndex];
+          if (verse['type'] == 'verse') {
+            _updateCurrentVerseLabel(verse['chapter'], verse['verse']);
+          }
         }
       }
     });
@@ -62,10 +67,11 @@ class _BibleAppState extends State<BibleApp> {
     setState(() {
       book = bookData;
       verses = data;
-      startingVerseIndex = 0;
+      displayList = _generateDisplayList(data);
 
       if (chapter != null && verse != null) {
-        startingVerseIndex = data.indexWhere((v) => v['chapter'] == chapter && v['verse'] == verse);
+        startingVerseIndex = displayList!.indexWhere((v) =>
+        v['type'] == 'verse' && v['chapter'] == chapter && v['verse'] == verse);
         if (startingVerseIndex == -1) {
           startingVerseIndex = 0;
         }
@@ -82,6 +88,31 @@ class _BibleAppState extends State<BibleApp> {
     });
   }
 
+  List<Map<String, dynamic>> _generateDisplayList(List<Map<String, dynamic>> verses) {
+    final List<Map<String, dynamic>> list = [];
+    int? currentChapter;
+
+    // Добавляем название книги как первый элемент списка
+    list.add({
+      'type': 'book',
+      'text': book['long_name'],
+    });
+
+    for (var verse in verses) {
+      if (currentChapter != verse['chapter']) {
+        currentChapter = verse['chapter'];
+        list.add({
+          'type': 'chapter',
+          'chapter': currentChapter,
+          'text': 'Глава $currentChapter',
+        });
+      }
+      list.add({...verse, 'type': 'verse'});
+    }
+
+    return list;
+  }
+
   void _updateCurrentVerseLabel(int chapter, int verse) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -89,7 +120,6 @@ class _BibleAppState extends State<BibleApp> {
           _currentVerseLabel = (chapter == 1 && verse == 1)
               ? '${book['long_name']} $chapter:$verse'
               : '${book['short_name']}. $chapter:$verse';
-
         });
       }
     });
@@ -99,12 +129,27 @@ class _BibleAppState extends State<BibleApp> {
     _loadVerses(bookNumber, chapter, verse);
   }
 
+  void _unlockScrolling() {
+    setState(() {
+      _isScrollLocked = false;
+      i.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final verseSelection = VerseSelection(
       context: context,
       onSelect: _onSelectVerse,
     );
+
+    if (i.isNotEmpty) {
+      _scrollController.scrollTo(
+        index: i.first,
+        duration: const Duration(milliseconds: 330),
+      );
+      _isScrollLocked = true;
+    }
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -125,59 +170,52 @@ class _BibleAppState extends State<BibleApp> {
             centerTitle: true,
             title: GestureDetector(
               onTap: verseSelection.showBooks,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+              child: !_isScrollLocked
+                  ? Container(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 8.0, horizontal: 16.0),
                 decoration: BoxDecoration(
                   color: Colors.grey[800],
                   borderRadius: BorderRadius.circular(8.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(1),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
                 ),
                 child: Text(
                   _currentVerseLabel,
-                  style: TextStyle(
-                    color: Colors.grey[300],
-                  ),
+                  style: TextStyle(color: Colors.grey[300]),
+                ),
+              )
+                  : Container(
+                width: 50.0,
+                height: 50.0,
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  iconSize: 25.0,
+                  icon: Icon(Icons.close, color: Colors.grey[300]),
+                  onPressed: _unlockScrolling,
                 ),
               ),
             ),
             backgroundColor: Colors.black,
           ),
           backgroundColor: Colors.black,
-          body: verses == null
+          body: displayList == null
               ? const Center(child: CircularProgressIndicator())
               : ScrollablePositionedList.builder(
             itemScrollController: _scrollController,
             itemPositionsListener: _positionsListener,
-            itemCount: verses!.length,
+            physics: _isScrollLocked
+                ? const NeverScrollableScrollPhysics()
+                : const AlwaysScrollableScrollPhysics(),
+            itemCount: displayList!.length,
             itemBuilder: (context, index) {
-              final verse = verses![index];
-              final isFirstInChapter = index == 0 || verses![index - 1]['chapter'] != verse['chapter'];
+              final item = displayList![index];
 
-              return Column(
-                children: [
-                  if (isFirstInChapter)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(
-                        'Глава ${verse['chapter']}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  SwipeableListTile(
-                    verse: verse,
-                  ),
-                ],
+              return SwipeableListTile(
+                verse: item,
+                index: index,
+                active: !i.contains(index),
               );
             },
           ),

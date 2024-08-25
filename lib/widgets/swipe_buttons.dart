@@ -36,17 +36,12 @@ class SwipeButton extends StatelessWidget {
   }
 }
 
-void on() {
-
-}
-
 List<Widget> buildSwipeActionLeft(double swipeOffset, VoidCallback onSwipeButtonPressed) => [
   SwipeButton(
     icon: Icons.archive,
     color: Colors.blue,
     scale: swipeOffset / 300,
     visible: swipeOffset >= 0,
-    onPressed: onSwipeButtonPressed,
   ),
   SwipeButton(
     icon: Icons.share,

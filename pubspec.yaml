@@ -32,7 +32,10 @@ dependencies:
     sdk: flutter
   sqflite: ^2.3.3+1
   scrollable_positioned_list: ^0.3.8
+  smooth_page_indicator: ^1.2.0+3
   shared_preferences: ^2.0.15
+#  auto_hyphenating_text: ^0.2.0
+#  hyphenatorx: ^1.5.11
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
