@@ -18,10 +18,14 @@ workflows:
         script: |
           set -e
           flutter build ios --no-codesign
-      - name: Package .app into .ipa
+      - name: Create .ipa
         script: |
           mkdir -p build/ios/ipa
-          xcrun -sdk iphoneos PackageApplication -v build/ios/iphoneos/Runner.app -o $PWD/build/ios/ipa/Runner.ipa
+          xcodebuild -exportArchive \
+          -archivePath build/ios/archive/Runner.xcarchive \
+          -exportPath build/ios/ipa \
+          -exportOptionsPlist <(echo '<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>method</key><string>ad-hoc</string><key>compileBitcode</key><false/></dict></plist>') \
+          CODE_SIGNING_ALLOWED=NO
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
