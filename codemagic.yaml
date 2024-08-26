@@ -18,7 +18,10 @@ workflows:
         script: |
           set -e
           flutter build ios --no-codesign
-          ls -la build/ios/ipa # Для проверки наличия файлов
+      - name: Package .app into .ipa
+        script: |
+          mkdir -p build/ios/ipa
+          xcrun -sdk iphoneos PackageApplication -v build/ios/iphoneos/Runner.app -o $PWD/build/ios/ipa/Runner.ipa
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
