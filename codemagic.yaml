@@ -8,10 +8,15 @@ workflows:
       cocoapods: default
 
     scripts:
-      - name: Install dependencies
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod init || true
+          pod install --repo-update
+
+      - name: Install Flutter dependencies
         script: |
           flutter packages get
-          pod install --repo-update
 
       - name: Build iOS app
         script: |
