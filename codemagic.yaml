@@ -16,7 +16,9 @@ workflows:
           flutter packages get
       - name: Build iOS App
         script: |
+          set -e
           flutter build ios --no-codesign
+          ls -la build/ios/ipa # Для проверки наличия файлов
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
