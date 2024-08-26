@@ -16,7 +16,7 @@ workflows:
           flutter packages get
       - name: Build iOS App
         script: |
-          flutter build ios --no-codesign
+          flutter build ios --no-codesign --release
     publishing:
       email:
         recipients:
