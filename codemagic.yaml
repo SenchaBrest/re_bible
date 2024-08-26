@@ -1,47 +1,25 @@
 workflows:
   ios:
-    name: iOS build
+    name: iOS Build
     max_build_duration: 60
     environment:
       flutter: stable
       xcode: latest
+      cocoapods: default
+
     scripts:
-      - name: Set up keychain
-        script: |
-          security create-keychain -p "" build.keychain
-          security list-keychains -d user -s build.keychain
-          security unlock-keychain -p "" build.keychain
-      - name: Fetching Dependencies
+      - name: Install dependencies
         script: |
           flutter packages get
-      - name: Build iOS App
+          pod install --repo-update
+
+      - name: Build iOS app
         script: |
-          set -e
-          flutter build ios --no-codesign
-      - name: Create exportOptions.plist
-        script: |
-          cat > exportOptions.plist <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>ad-hoc</string>
-            <key>compileBitcode</key>
-            <false/>
-          </dict>
-          </plist>
-          EOF
-      - name: Create .ipa
-        script: |
-          mkdir -p build/ios/ipa
-          xcodebuild -exportArchive \
-          -archivePath build/ios/archive/Runner.xcarchive \
-          -exportPath build/ios/ipa \
-          -exportOptionsPlist exportOptions.plist \
-          CODE_SIGNING_ALLOWED=NO
+          flutter build ios --release --no-codesign
+
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/iphoneos/*.ipa
+
     publishing:
       email:
         recipients:
