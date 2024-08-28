@@ -96,12 +96,11 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
           key: _tileKey,
           decoration: const BoxDecoration(color: Colors.black),
           child: ListTile(
-            title: Text.rich(
-              TextSpan(
-                children: _parseVerseText('${widget.verse['verse']}. ${widget.verse['text']}'),
-                style: TextStyle(color: Colors.grey[900]),
-              ),
+            title: Text(
+              '${widget.verse['verse']}. ${widget.verse['text']}',
+              style: TextStyle(color: Colors.grey[900]),
             ),
+            textColor: Colors.white,
           )
       );
     }
@@ -209,10 +208,9 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
                 key: _tileKey,
                 decoration: const BoxDecoration(color: Colors.black),
                 child: ListTile(
-                  title: Text.rich(
-                    TextSpan(
-                      children: _parseVerseText('${widget.verse['verse']}. ${widget.verse['text']}'),
-                    ),
+                  title: Text(
+                    '${widget.verse['verse']}. ${widget.verse['text']}',
+                    style: TextStyle(color: Colors.grey[900]),
                   ),
                   textColor: Colors.white,
                 )
@@ -224,36 +222,3 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
     });
   }
 }
-
-List<TextSpan> _parseVerseText(String text) {
-  final List<TextSpan> spans = [];
-  final RegExp regExp = RegExp(r'(<i>|</i>|<J>|</J>)');
-  final List<String> parts = text.split(regExp);
-
-  bool isItalic = false;
-  bool isBold = false;
-
-  for (var part in parts) {
-    if (part == '<i>') {
-      isItalic = true;
-    } else if (part == '</i>') {
-      isItalic = false;
-    } else if (part == '<J>') {
-      isBold = true;
-    } else if (part == '</J>') {
-      isBold = false;
-    } else if (part.isNotEmpty) {
-      spans.add(TextSpan(
-        text: part,
-        style: TextStyle(
-          fontStyle: isItalic ? FontStyle.italic : FontStyle.normal,
-          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-        ),
-      ));
-    }
-  }
-
-  return spans;
-}
-
-
