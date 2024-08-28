@@ -28,7 +28,6 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
   double _swipeOffset = 0.0;
   late AnimationController _controller;
   late Animation<double> _animation;
-  bool _isAdditionalButtonsVisible = false;
   final GlobalKey _tileKey = GlobalKey();
 
   @override
@@ -63,7 +62,6 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
 
   void _onSwipeButtonPressed() {
     setState(() {
-      // _isAdditionalButtonsVisible = !_isAdditionalButtonsVisible;
       _animateToEnd(0.0);
       i.add(widget.index);
     });
@@ -90,7 +88,7 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
           verse: widget.verse,
           size: _getElementSize(),
           pageCount: 6,
-          hiddenWordPercentages: [0, 0.20, 0.40, 0.60, 0.80, 1.00],
+          hiddenWordPercentages: const [0, 0.20, 0.40, 0.60, 0.80, 1.00],
       );
     }
     if (i.isNotEmpty) {
@@ -98,11 +96,12 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
           key: _tileKey,
           decoration: const BoxDecoration(color: Colors.black),
           child: ListTile(
-            title: Text(
-                '${widget.verse['verse']}. ${widget.verse['text']}',
+            title: Text.rich(
+              TextSpan(
+                children: _parseVerseText('${widget.verse['verse']}. ${widget.verse['text']}'),
                 style: TextStyle(color: Colors.grey[900]),
+              ),
             ),
-            textColor: Colors.white,
           )
       );
     }
@@ -115,7 +114,6 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
         final touchPosition = touchEvent.localPosition;
         final listTilePosition = _getElementPosition();
         final listTileSize = _getElementSize();
-        print(listTileSize);
 
         if (!(touchPosition.dy <= listTileSize.height + listTilePosition.dy &&
             touchPosition.dy >= listTilePosition.dy)) {
@@ -199,13 +197,9 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
                   mainAxisAlignment: _swipeOffset > 0 ? MainAxisAlignment.start : MainAxisAlignment.end,
                   children: [
                     if (_swipeOffset > 0)
-                      ...(_isAdditionalButtonsVisible
-                          ? buildAdditionalSwipeActionLeft(_swipeOffset)
-                          : buildSwipeActionLeft(_swipeOffset, _onSwipeButtonPressed)),
+                      ...(buildSwipeActionLeft(_swipeOffset, _onSwipeButtonPressed)),
                     if (_swipeOffset < 0)
-                      ...(_isAdditionalButtonsVisible
-                          ? buildAdditionalSwipeActionRight(_swipeOffset)
-                          : buildSwipeActionRight(_swipeOffset, _onSwipeButtonPressed)),
+                      ...(buildSwipeActionRight(_swipeOffset, _onSwipeButtonPressed)),
                   ],
                 ),
               ),
@@ -215,12 +209,13 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
                 key: _tileKey,
                 decoration: const BoxDecoration(color: Colors.black),
                 child: ListTile(
-                  title: Text(
-                    '${widget.verse['verse']}. ${widget.verse['text']}',
-                    textAlign: TextAlign.justify,
+                  title: Text.rich(
+                    TextSpan(
+                      children: _parseVerseText('${widget.verse['verse']}. ${widget.verse['text']}'),
+                    ),
                   ),
                   textColor: Colors.white,
-                ),
+                )
               ),
             ),
           ],
@@ -229,3 +224,36 @@ class _SwipeableListTileState extends State<SwipeableListTile> with SingleTicker
     });
   }
 }
+
+List<TextSpan> _parseVerseText(String text) {
+  final List<TextSpan> spans = [];
+  final RegExp regExp = RegExp(r'(<i>|</i>|<J>|</J>)');
+  final List<String> parts = text.split(regExp);
+
+  bool isItalic = false;
+  bool isBold = false;
+
+  for (var part in parts) {
+    if (part == '<i>') {
+      isItalic = true;
+    } else if (part == '</i>') {
+      isItalic = false;
+    } else if (part == '<J>') {
+      isBold = true;
+    } else if (part == '</J>') {
+      isBold = false;
+    } else if (part.isNotEmpty) {
+      spans.add(TextSpan(
+        text: part,
+        style: TextStyle(
+          fontStyle: isItalic ? FontStyle.italic : FontStyle.normal,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+        ),
+      ));
+    }
+  }
+
+  return spans;
+}
+
+

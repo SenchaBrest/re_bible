@@ -38,41 +38,20 @@ class SwipeButton extends StatelessWidget {
 
 List<Widget> buildSwipeActionLeft(double swipeOffset, VoidCallback onSwipeButtonPressed) => [
   SwipeButton(
-    icon: Icons.archive,
+    icon: Icons.not_interested,
     color: Colors.blue,
     scale: swipeOffset / 300,
     visible: swipeOffset >= 0,
   ),
   SwipeButton(
-    icon: Icons.share,
+    icon: Icons.not_interested,
     color: Colors.green,
     scale: swipeOffset / 300,
     visible: swipeOffset >= 0,
   ),
   SwipeButton(
-    icon: Icons.label,
+    icon: Icons.not_interested,
     color: Colors.yellow,
-    scale: swipeOffset / 300,
-    visible: swipeOffset >= 0,
-  ),
-];
-
-List<Widget> buildAdditionalSwipeActionLeft(double swipeOffset) => [
-  SwipeButton(
-    icon: Icons.folder,
-    color: Colors.teal,
-    scale: swipeOffset / 300,
-    visible: swipeOffset >= 0,
-  ),
-  SwipeButton(
-    icon: Icons.download,
-    color: Colors.indigo,
-    scale: swipeOffset / 300,
-    visible: swipeOffset >= 0,
-  ),
-  SwipeButton(
-    icon: Icons.copy,
-    color: Colors.pink,
     scale: swipeOffset / 300,
     visible: swipeOffset >= 0,
   ),
@@ -80,42 +59,21 @@ List<Widget> buildAdditionalSwipeActionLeft(double swipeOffset) => [
 
 List<Widget> buildSwipeActionRight(double swipeOffset, VoidCallback onSwipeButtonPressed) => [
   SwipeButton(
-    icon: Icons.delete,
+    icon: Icons.mark_chat_read_outlined,
     color: Colors.red,
     scale: -swipeOffset / 300,
     visible: swipeOffset <= 0,
     onPressed: onSwipeButtonPressed,
   ),
   SwipeButton(
-    icon: Icons.edit,
+    icon: Icons.not_interested,
     color: Colors.orange,
     scale: -swipeOffset / 300,
     visible: swipeOffset <= 0,
   ),
   SwipeButton(
-    icon: Icons.sunny,
+    icon: Icons.not_interested,
     color: Colors.purple,
-    scale: -swipeOffset / 300,
-    visible: swipeOffset <= 0,
-  ),
-];
-
-List<Widget> buildAdditionalSwipeActionRight(double swipeOffset) => [
-  SwipeButton(
-    icon: Icons.save,
-    color: Colors.brown,
-    scale: -swipeOffset / 300,
-    visible: swipeOffset <= 0,
-  ),
-  SwipeButton(
-    icon: Icons.email,
-    color: Colors.cyan,
-    scale: -swipeOffset / 300,
-    visible: swipeOffset <= 0,
-  ),
-  SwipeButton(
-    icon: Icons.print,
-    color: Colors.lime,
     scale: -swipeOffset / 300,
     visible: swipeOffset <= 0,
   ),
